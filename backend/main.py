@@ -1,29 +1,51 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from rag.query import search
 
 import sqlite3
+import hashlib
+import hmac
+import time
 from datetime import datetime
+
+
+# =========================================================
+# FASTAPI APP
+# =========================================================
 
 app = FastAPI(title="Campus Helpdesk RAG Chatbot")
 
 
-# -----------------------------
+# =========================================================
 # CORS
-# -----------------------------
+# =========================================================
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-# -----------------------------
+# =========================================================
+# ADMIN LOGIN SETTINGS
+# =========================================================
+
+ADMIN_USERNAME = "Admin"
+ADMIN_PASSWORD = "A2D2"
+
+# Used for creating login tokens.
+# For your college demo this is fine.
+SECRET_KEY = "CampusHelpdeskSecretKey2026"
+
+
+# =========================================================
 # DATABASE
-# -----------------------------
+# =========================================================
+
 DB_NAME = "chatbot.db"
 
 
@@ -34,9 +56,11 @@ def get_db():
 
 
 def create_database():
+
     conn = get_db()
 
-    conn.execute("""
+    conn.execute(
+        """
         CREATE TABLE IF NOT EXISTS chats (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             question TEXT NOT NULL,
@@ -44,51 +68,181 @@ def create_database():
             timestamp TEXT NOT NULL,
             feedback TEXT
         )
-    """)
+        """
+    )
 
     conn.commit()
     conn.close()
 
 
+# Create database when backend starts
 create_database()
 
 
-# -----------------------------
+# =========================================================
+# TOKEN FUNCTIONS
+# =========================================================
+
+def create_token(username: str):
+
+    timestamp = str(int(time.time()))
+
+    data = username + ":" + timestamp
+
+    signature = hmac.new(
+        SECRET_KEY.encode("utf-8"),
+        data.encode("utf-8"),
+        hashlib.sha256
+    ).hexdigest()
+
+    return data + ":" + signature
+
+
+def verify_token(token: str):
+
+    if not token:
+        return False
+
+    try:
+
+        parts = token.split(":")
+
+        if len(parts) != 3:
+            return False
+
+        username = parts[0]
+        timestamp = parts[1]
+        signature = parts[2]
+
+        # Token expires after 2 hours
+        if time.time() - int(timestamp) > 7200:
+            return False
+
+        data = username + ":" + timestamp
+
+        expected_signature = hmac.new(
+            SECRET_KEY.encode("utf-8"),
+            data.encode("utf-8"),
+            hashlib.sha256
+        ).hexdigest()
+
+        return hmac.compare_digest(
+            signature,
+            expected_signature
+        )
+
+    except (ValueError, TypeError):
+
+        return False
+
+
+def require_admin(authorization: str):
+
+    if not authorization:
+
+        raise HTTPException(
+            status_code=401,
+            detail="Admin login required"
+        )
+
+    if not authorization.startswith("Bearer "):
+
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid authorization"
+        )
+
+    token = authorization[len("Bearer "):]
+
+    if not verify_token(token):
+
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired admin session"
+        )
+
+    return True
+
+
+# =========================================================
 # HOME
-# -----------------------------
+# =========================================================
+
 @app.get("/")
 def home():
+
     return {
         "message": "Campus Helpdesk RAG Backend is running!"
     }
 
 
-# -----------------------------
+# =========================================================
+# ADMIN LOGIN
+# =========================================================
+
+class LoginRequest(BaseModel):
+
+    username: str
+    password: str
+
+
+@app.post("/admin/login")
+def admin_login(data: LoginRequest):
+
+    if (
+        data.username == ADMIN_USERNAME
+        and data.password == ADMIN_PASSWORD
+    ):
+
+        token = create_token(data.username)
+
+        return {
+            "success": True,
+            "token": token
+        }
+
+    raise HTTPException(
+        status_code=401,
+        detail="Invalid username or password"
+    )
+
+
+# =========================================================
 # QUESTION MODEL
-# -----------------------------
+# =========================================================
+
 class Question(BaseModel):
+
     question: str
 
 
-# -----------------------------
+# =========================================================
 # ASK CHATBOT
-# -----------------------------
+# =========================================================
+
 @app.post("/ask")
 def ask_question(data: Question):
 
+    # Search your existing RAG/FAISS system
     results = search(data.question)
 
     if not results:
-        answer = "Sorry, I could not find relevant information."
+
+        answer = (
+            "Sorry, I could not find relevant information."
+        )
+
     else:
+
         answer = "\n\n".join(results)
 
-    # Save chat in database
+    # Save question and answer for dashboard analytics
     conn = get_db()
 
     conn.execute(
         """
-        INSERT INTO chats (question, answer, timestamp)
+        INSERT INTO chats
+        (question, answer, timestamp)
         VALUES (?, ?, ?)
         """,
         (
@@ -106,11 +260,16 @@ def ask_question(data: Question):
     }
 
 
-# -----------------------------
-# DASHBOARD STATISTICS
-# -----------------------------
+# =========================================================
+# DASHBOARD - STATISTICS
+# =========================================================
+
 @app.get("/dashboard/stats")
-def dashboard_stats():
+def dashboard_stats(
+    authorization: str = Header(default=None)
+):
+
+    require_admin(authorization)
 
     conn = get_db()
 
@@ -119,22 +278,35 @@ def dashboard_stats():
     ).fetchone()[0]
 
     total_feedback = conn.execute(
-        "SELECT COUNT(*) FROM chats WHERE feedback IS NOT NULL"
+        """
+        SELECT COUNT(*)
+        FROM chats
+        WHERE feedback IS NOT NULL
+        """
     ).fetchone()[0]
 
     positive_feedback = conn.execute(
-        "SELECT COUNT(*) FROM chats WHERE feedback = 'positive'"
+        """
+        SELECT COUNT(*)
+        FROM chats
+        WHERE feedback = 'positive'
+        """
     ).fetchone()[0]
 
     negative_feedback = conn.execute(
-        "SELECT COUNT(*) FROM chats WHERE feedback = 'negative'"
+        """
+        SELECT COUNT(*)
+        FROM chats
+        WHERE feedback = 'negative'
+        """
     ).fetchone()[0]
 
     today_questions = conn.execute(
         """
         SELECT COUNT(*)
         FROM chats
-        WHERE date(timestamp) = date('now', 'localtime')
+        WHERE date(timestamp)
+        = date('now', 'localtime')
         """
     ).fetchone()[0]
 
@@ -150,11 +322,16 @@ def dashboard_stats():
     }
 
 
-# -----------------------------
-# RECENT QUESTIONS
-# -----------------------------
+# =========================================================
+# DASHBOARD - RECENT QUESTIONS
+# =========================================================
+
 @app.get("/dashboard/recent")
-def recent_questions():
+def recent_questions(
+    authorization: str = Header(default=None)
+):
+
+    require_admin(authorization)
 
     conn = get_db()
 
@@ -179,11 +356,16 @@ def recent_questions():
     ]
 
 
-# -----------------------------
-# POPULAR QUESTIONS
-# -----------------------------
+# =========================================================
+# DASHBOARD - POPULAR QUESTIONS
+# =========================================================
+
 @app.get("/dashboard/popular")
-def popular_questions():
+def popular_questions(
+    authorization: str = Header(default=None)
+):
+
+    require_admin(authorization)
 
     conn = get_db()
 
@@ -208,17 +390,23 @@ def popular_questions():
     ]
 
 
-# -----------------------------
-# QUESTIONS PER DAY
-# -----------------------------
+# =========================================================
+# DASHBOARD - QUESTIONS PER DAY
+# =========================================================
+
 @app.get("/dashboard/daily")
-def daily_questions():
+def daily_questions(
+    authorization: str = Header(default=None)
+):
+
+    require_admin(authorization)
 
     conn = get_db()
 
     rows = conn.execute(
         """
-        SELECT date(timestamp) AS day, COUNT(*) AS count
+        SELECT date(timestamp) AS day,
+               COUNT(*) AS count
         FROM chats
         GROUP BY date(timestamp)
         ORDER BY day DESC
@@ -237,26 +425,34 @@ def daily_questions():
     ]
 
 
-# -----------------------------
-# FEEDBACK
-# -----------------------------
+# =========================================================
+# DASHBOARD - FEEDBACK
+# =========================================================
+
 class Feedback(BaseModel):
+
     chat_id: int
     feedback: str
 
 
 @app.post("/dashboard/feedback")
-def add_feedback(data: Feedback):
+def add_feedback(
+    data: Feedback,
+    authorization: str = Header(default=None)
+):
+
+    require_admin(authorization)
 
     if data.feedback not in ["positive", "negative"]:
-        return {
-            "success": False,
-            "message": "Invalid feedback"
-        }
+
+        raise HTTPException(
+            status_code=400,
+            detail="Feedback must be positive or negative"
+        )
 
     conn = get_db()
 
-    conn.execute(
+    cursor = conn.execute(
         """
         UPDATE chats
         SET feedback = ?
@@ -271,6 +467,14 @@ def add_feedback(data: Feedback):
     conn.commit()
     conn.close()
 
+    if cursor.rowcount == 0:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Chat not found"
+        )
+
     return {
-        "success": True
+        "success": True,
+        "message": "Feedback saved"
     }
