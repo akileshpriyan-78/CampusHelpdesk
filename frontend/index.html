@@ -1,12 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
 
     <title>Campus Helpdesk</title>
 
     <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: Arial, sans-serif;
             background: #f4f6f8;
@@ -42,8 +51,13 @@
             margin-top: 25px;
         }
 
+        .input-area {
+            display: flex;
+            gap: 10px;
+        }
+
         input {
-            width: 70%;
+            flex: 1;
             padding: 12px;
             border: 1px solid #ccc;
             border-radius: 6px;
@@ -69,10 +83,23 @@
             padding: 15px;
             background: #f1f1f1;
             border-radius: 8px;
-            min-height: 30px;
+            min-height: 50px;
+            white-space: pre-wrap;
         }
+
+        .admin-link {
+            display: block;
+            text-align: center;
+            margin-top: 25px;
+            color: #1976d2;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
     </style>
+
 </head>
+
 
 <body>
 
@@ -81,20 +108,26 @@
     <h1>🎓 Campus Helpdesk</h1>
 
     <div class="status">
-        Backend Status: <strong>Connected</strong>
+        Backend Status:
+        <strong>Connected</strong>
     </div>
 
     <div class="chat-box">
 
-        <input
-            type="text"
-            id="question"
-            placeholder="Ask your campus question..."
-        >
+        <div class="input-area">
 
-        <button onclick="askQuestion()">
-            Ask
-        </button>
+            <input
+                type="text"
+                id="question"
+                placeholder="Ask your campus question..."
+            >
+
+            <button onclick="askQuestion()">
+                Ask
+            </button>
+
+        </div>
+
 
         <div id="response">
             Response will appear here.
@@ -102,29 +135,69 @@
 
     </div>
 
+
+    <a class="admin-link"
+       href="admin.html">
+
+       🔐 Open Admin Dashboard
+
+    </a>
+
 </div>
+
 
 <script>
 
+let currentChatId = null;
+
+
 async function askQuestion() {
 
-    const question = document.getElementById("question").value;
+    const question =
+        document.getElementById("question").value;
+
 
     if (question.trim() === "") {
+
         alert("Please enter a question.");
+
         return;
     }
 
-    document.getElementById("response").innerText = "Processing...";
+
+    document.getElementById("response").innerText =
+        "Processing...";
+
 
     try {
 
-        const response = await fetch("http://127.0.0.1:8000/");
+        const response = await fetch(
+            "http://127.0.0.1:8000/ask",
+            {
+
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    question: question
+                })
+
+            }
+        );
+
 
         const data = await response.json();
 
+
         document.getElementById("response").innerText =
-            data.message;
+            data.answer;
+
+
+        document.getElementById("question").value = "";
+
 
     } catch (error) {
 
@@ -132,10 +205,13 @@ async function askQuestion() {
             "Unable to connect to backend.";
 
         console.error(error);
+
     }
+
 }
 
 </script>
 
 </body>
+
 </html>
