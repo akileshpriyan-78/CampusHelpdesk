@@ -8,3 +8,5 @@ def home():
     return {
         "message": "Campus Helpdesk RAG Backend is running!"
     }
+    GitHub connection tested successfully.
+    
