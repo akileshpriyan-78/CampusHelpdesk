@@ -10,3 +10,5 @@ def home():
     }
     GitHub connection tested successfully.
     My first GitHub update
+
+    Project update
