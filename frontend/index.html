@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Campus Helpdesk</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 80%;
+            max-width: 800px;
+            margin: 60px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .status {
+            text-align: center;
+            margin: 20px 0;
+            padding: 12px;
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-radius: 8px;
+        }
+
+        .chat-box {
+            margin-top: 25px;
+        }
+
+        input {
+            width: 70%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            background: #1976d2;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #125aa0;
+        }
+
+        #response {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f1f1f1;
+            border-radius: 8px;
+            min-height: 30px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>🎓 Campus Helpdesk</h1>
+
+    <div class="status">
+        Backend Status: <strong>Connected</strong>
+    </div>
+
+    <div class="chat-box">
+
+        <input
+            type="text"
+            id="question"
+            placeholder="Ask your campus question..."
+        >
+
+        <button onclick="askQuestion()">
+            Ask
+        </button>
+
+        <div id="response">
+            Response will appear here.
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+async function askQuestion() {
+
+    const question = document.getElementById("question").value;
+
+    if (question.trim() === "") {
+        alert("Please enter a question.");
+        return;
+    }
+
+    document.getElementById("response").innerText = "Processing...";
+
+    try {
+
+        const response = await fetch("http://127.0.0.1:8000/ask", {
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                question: question
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error("Server returned an error");
+        }
+
+        const data = await response.json();
+
+        document.getElementById("response").innerText =
+            data.answer;
+
+    } catch (error) {
+
+        document.getElementById("response").innerText =
+            "Unable to connect to backend.";
+
+        console.error(error);
+    }
+}
+
+</script>
+
+</body>
+</html>
