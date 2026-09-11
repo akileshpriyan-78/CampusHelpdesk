@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>Campus Helpdesk - Admin Dashboard</title>
+
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+
+body {
+
+    margin: 0;
+
+    font-family: Arial, sans-serif;
+
+    background: #f4f6f8;
+
+    color: #222;
+
+}
+
+
+/* SIDEBAR */
+
+.sidebar {
+
+    position: fixed;
+
+    left: 0;
+
+    top: 0;
+
+    width: 230px;
+
+    height: 100vh;
+
+    background: #172554;
+
+    color: white;
+
+    padding: 25px;
+
+}
+
+
+.sidebar h2 {
+
+    margin-bottom: 40px;
+
+}
+
+
+.sidebar a {
+
+    display: block;
+
+    padding: 14px;
+
+    margin-bottom: 10px;
+
+    color: white;
+
+    text-decoration: none;
+
+    border-radius: 8px;
+
+}
+
+
+.sidebar a:hover {
+
+    background: #1e3a8a;
+
+}
+
+
+/* MAIN */
+
+.main {
+
+    margin-left: 230px;
+
+    padding: 30px;
+
+}
+
+
+.header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-bottom: 30px;
+
+}
+
+
+.header h1 {
+
+    margin: 0;
+
+}
+
+
+.admin {
+
+    background: white;
+
+    padding: 10px 18px;
+
+    border-radius: 20px;
+
+}
+
+
+/* CARDS */
+
+.cards {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fit, minmax(200px, 1fr));
+
+    gap: 20px;
+
+}
+
+
+.card {
+
+    background: white;
+
+    padding: 25px;
+
+    border-radius: 12px;
+
+    box-shadow:
+        0 3px 10px rgba(0,0,0,0.08);
+
+}
+
+
+.card h3 {
+
+    margin-top: 0;
+
+    color: #666;
+
+}
+
+
+.number {
+
+    font-size: 32px;
+
+    font-weight: bold;
+
+    margin-top: 10px;
+
+}
+
+
+/* CONTENT */
+
+.content {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 20px;
+
+    margin-top: 25px;
+
+}
+
+
+.panel {
+
+    background: white;
+
+    padding: 25px;
+
+    border-radius: 12px;
+
+    box-shadow:
+        0 3px 10px rgba(0,0,0,0.08);
+
+}
+
+
+.panel h2 {
+
+    margin-top: 0;
+
+}
+
+
+/* RECENT QUESTIONS */
+
+.question {
+
+    padding: 12px;
+
+    border-bottom: 1px solid #eee;
+
+}
+
+
+.question:last-child {
+
+    border-bottom: none;
+
+}
+
+
+.time {
+
+    font-size: 12px;
+
+    color: #888;
+
+    margin-top: 5px;
+
+}
+
+
+/* POPULAR */
+
+.popular-item {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    padding: 12px;
+
+    border-bottom: 1px solid #eee;
+
+}
+
+
+.badge {
+
+    background: #1976d2;
+
+    color: white;
+
+    padding: 5px 10px;
+
+    border-radius: 15px;
+
+}
+
+
+/* CHART */
+
+.chart {
+
+    margin-top: 20px;
+
+}
+
+
+.bar-row {
+
+    display: flex;
+
+    align-items: center;
+
+    margin: 12px 0;
+
+}
+
+
+.bar-label {
+
+    width: 100px;
+
+    font-size: 13px;
+
+}
+
+
+.bar-container {
+
+    flex: 1;
+
+    height: 25px;
+
+    background: #eee;
+
+    border-radius: 5px;
+
+}
+
+
+.bar {
+
+    height: 100%;
+
+    background: #1976d2;
+
+    border-radius: 5px;
+
+    transition: width 0.5s;
+
+}
+
+
+.bar-value {
+
+    width: 40px;
+
+    text-align: right;
+
+    font-weight: bold;
+
+}
+
+
+/* RESPONSIVE */
+
+@media(max-width: 800px) {
+
+    .sidebar {
+
+        width: 180px;
+
+    }
+
+    .main {
+
+        margin-left: 180px;
+
+    }
+
+    .content {
+
+        grid-template-columns: 1fr;
+
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<!-- SIDEBAR -->
+
+<div class="sidebar">
+
+    <h2>🎓 Campus</h2>
+
+    <a href="index.html">
+        🤖 Chatbot
+    </a>
+
+    <a href="admin.html">
+        📊 Dashboard
+    </a>
+
+</div>
+
+
+
+<!-- MAIN -->
+
+<div class="main">
+
+
+    <div class="header">
+
+        <h1>
+            📊 Admin Dashboard
+        </h1>
+
+        <div class="admin">
+            👤 Administrator
+        </div>
+
+    </div>
+
+
+
+    <!-- STATISTICS -->
+
+    <div class="cards">
+
+
+        <div class="card">
+
+            <h3>
+                💬 Total Questions
+            </h3>
+
+            <div
+                class="number"
+                id="totalQuestions">
+
+                0
+
+            </div>
+
+        </div>
+
+
+
+        <div class="card">
+
+            <h3>
+                📅 Today's Questions
+            </h3>
+
+            <div
+                class="number"
+                id="todayQuestions">
+
+                0
+
+            </div>
+
+        </div>
+
+
+
+        <div class="card">
+
+            <h3>
+                👍 Positive Feedback
+            </h3>
+
+            <div
+                class="number"
+                id="positiveFeedback">
+
+                0
+
+            </div>
+
+        </div>
+
+
+
+        <div class="card">
+
+            <h3>
+                👎 Negative Feedback
+            </h3>
+
+            <div
+                class="number"
+                id="negativeFeedback">
+
+                0
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- LOWER CONTENT -->
+
+    <div class="content">
+
+
+        <!-- RECENT -->
+
+        <div class="panel">
+
+            <h2>
+                🕐 Recent Questions
+            </h2>
+
+            <div id="recentQuestions">
+
+                Loading...
+
+            </div>
+
+        </div>
+
+
+
+        <!-- POPULAR -->
+
+        <div class="panel">
+
+            <h2>
+                🔥 Popular Questions
+            </h2>
+
+            <div id="popularQuestions">
+
+                Loading...
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- CHART -->
+
+    <div class="panel chart">
+
+        <h2>
+            📈 Questions Per Day
+        </h2>
+
+        <div id="dailyChart">
+
+            Loading...
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+
+<script>
+
+
+const API =
+    "http://127.0.0.1:8000";
+
+
+
+/* LOAD STATISTICS */
+
+async function loadStats() {
+
+    try {
+
+        const response =
+            await fetch(
+                API + "/dashboard/stats"
+            );
+
+        const data =
+            await response.json();
+
+
+        document.getElementById(
+            "totalQuestions"
+        ).innerText =
+            data.total_questions;
+
+
+        document.getElementById(
+            "todayQuestions"
+        ).innerText =
+            data.today_questions;
+
+
+        document.getElementById(
+            "positiveFeedback"
+        ).innerText =
+            data.positive_feedback;
+
+
+        document.getElementById(
+            "negativeFeedback"
+        ).innerText =
+            data.negative_feedback;
+
+
+    } catch(error) {
+
+        console.error(error);
+
+    }
+
+}
+
+
+
+/* LOAD RECENT QUESTIONS */
+
+async function loadRecent() {
+
+    try {
+
+        const response =
+            await fetch(
+                API + "/dashboard/recent"
+            );
+
+        const data =
+            await response.json();
+
+
+        const container =
+            document.getElementById(
+                "recentQuestions"
+            );
+
+
+        container.innerHTML = "";
+
+
+        if(data.length === 0) {
+
+            container.innerHTML =
+                "<p>No questions yet.</p>";
+
+            return;
+
+        }
+
+
+        data.forEach(item => {
+
+            const div =
+                document.createElement("div");
+
+
+            div.className =
+                "question";
+
+
+            div.innerHTML = `
+
+                <strong>
+                    ${escapeHtml(item.question)}
+                </strong>
+
+                <div class="time">
+                    ${item.timestamp}
+                </div>
+
+            `;
+
+
+            container.appendChild(div);
+
+        });
+
+
+    } catch(error) {
+
+        console.error(error);
+
+    }
+
+}
+
+
+
+/* LOAD POPULAR */
+
+async function loadPopular() {
+
+    try {
+
+        const response =
+            await fetch(
+                API + "/dashboard/popular"
+            );
+
+        const data =
+            await response.json();
+
+
+        const container =
+            document.getElementById(
+                "popularQuestions"
+            );
+
+
+        container.innerHTML = "";
+
+
+        if(data.length === 0) {
+
+            container.innerHTML =
+                "<p>No questions yet.</p>";
+
+            return;
+
+        }
+
+
+        data.forEach(item => {
+
+            const div =
+                document.createElement("div");
+
+
+            div.className =
+                "popular-item";
+
+
+            div.innerHTML = `
+
+                <span>
+                    ${escapeHtml(item.question)}
+                </span>
+
+                <span class="badge">
+                    ${item.count}
+                </span>
+
+            `;
+
+
+            container.appendChild(div);
+
+        });
+
+
+    } catch(error) {
+
+        console.error(error);
+
+    }
+
+}
+
+
+
+/* LOAD DAILY CHART */
+
+async function loadDaily() {
+
+    try {
+
+        const response =
+            await fetch(
+                API + "/dashboard/daily"
+            );
+
+        const data =
+            await response.json();
+
+
+        const container =
+            document.getElementById(
+                "dailyChart"
+            );
+
+
+        container.innerHTML = "";
+
+
+        if(data.length === 0) {
+
+            container.innerHTML =
+                "<p>No data available.</p>";
+
+            return;
+
+        }
+
+
+        const max =
+            Math.max(
+                ...data.map(x => x.count),
+                1
+            );
+
+
+        data.reverse().forEach(item => {
+
+            const row =
+                document.createElement("div");
+
+
+            row.className =
+                "bar-row";
+
+
+            const width =
+                (item.count / max) * 100;
+
+
+            row.innerHTML = `
+
+                <div class="bar-label">
+                    ${item.day}
+                </div>
+
+                <div class="bar-container">
+
+                    <div
+                        class="bar"
+                        style="width:${width}%">
+                    </div>
+
+                </div>
+
+                <div class="bar-value">
+                    ${item.count}
+                </div>
+
+            `;
+
+
+            container.appendChild(row);
+
+        });
+
+
+    } catch(error) {
+
+        console.error(error);
+
+    }
+
+}
+
+
+
+/* SECURITY */
+
+function escapeHtml(text) {
+
+    const div =
+        document.createElement("div");
+
+    div.innerText = text;
+
+    return div.innerHTML;
+
+}
+
+
+
+/* INITIAL LOAD */
+
+loadStats();
+
+loadRecent();
+
+loadPopular();
+
+loadDaily();
+
+
+/* AUTO REFRESH */
+
+setInterval(() => {
+
+    loadStats();
+
+    loadRecent();
+
+    loadPopular();
+
+    loadDaily();
+
+}, 10000);
+
+
+</script>
+
+
+</body>
+
+</html>
